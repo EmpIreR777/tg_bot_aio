@@ -16,11 +16,11 @@ def create_rat():
 
 def main_kb(user_telegram_id: int):
     kb_list = [
-        [KeyboardButton(text="📖 О нас"), KeyboardButton(text="👤 Профиль")],
-        [KeyboardButton(text="📝 Заполнить анкету"), KeyboardButton(text="📚 Каталог")],
+        [KeyboardButton(text='Давай инлайн!'), KeyboardButton(text='👤 Профиль')],
+        [KeyboardButton(text='📝 Заполнить анкету'), KeyboardButton(text='📚 Каталог')],
     ]
     if user_telegram_id in admins:
-        kb_list.append([KeyboardButton(text="⚙️ Админ панель")])
+        kb_list.append([KeyboardButton(text='⚙️ Админ панель')])
     keyboard = ReplyKeyboardMarkup(
         keyboard=kb_list,
         resize_keyboard=True,
