@@ -1,18 +1,8 @@
 from aiogram.types import (KeyboardButton, ReplyKeyboardMarkup,
                             KeyboardButtonPollType)
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from aiogram.types import BotCommand, BotCommandScopeDefault
 
 from create_bot import admins, bot
-
-
-async def set_commands():
-    commands = [  # Настройка командного меню через код
-        BotCommand(command='start', description='Старт'),
-        BotCommand(command='start_2', description='Старт 2'),
-        BotCommand(command='start_3', description='Старт 3'),
-    ]
-    await bot.set_my_commands(commands, BotCommandScopeDefault())
 
 
 def create_rat():
