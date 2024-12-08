@@ -1,20 +1,71 @@
+import asyncio
 from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message, CallbackQuery
+from aiogram.utils.chat_action import ChatActionSender
 
 from keyboards.all_kb import create_rat, main_kb, create_spec_kb
-from keyboards.inline_kbs import ease_link_kb, get_inline_kb
+from keyboards.inline_kbs import ease_link_kb, get_inline_kb, create_gst_inline_kb
 from utils.utils import get_random_person
+from create_bot import questions, bot
+
 
 start_router = Router()
 
 
+@start_router.message(F.text.lower().contains('подписывайся'))
+async def process_find_word(message: Message):
+    await message.answer('В твоем сообщении было найдено слово "подписывайся", а у нас такое писать запрещено!')
+
+
+@start_router.message(Command(commands=["settings", "about"]))
+async def univers_cmd_handler(message: Message, command: CommandObject):
+    command_args: str = command.args
+    command_name = 'settings' if 'settings' in message.text else 'about'
+    response = f'Была вызвана команда /{command_name}'
+    if command_args:
+        response += f' с меткой <b>{command_args}</b>'
+    else:
+        response += ' без метки'
+    await message.answer(response)
+
+
+@start_router.callback_query(F.data.startswith('qst_'))
+async def cmd_start(call: CallbackQuery):
+    await call.answer()
+    qst_id = int(call.data.replace('qst_', ''))
+    qst_data = questions[qst_id]
+    msg_text = f'Ответ на вопрос {qst_data.get("qst")}\n\n' \
+               f'<b>{qst_data.get("answer")}</b>\n\n' \
+               f'Выбери другой вопрос:'
+    async with ChatActionSender(bot=bot, chat_id=call.from_user.id,
+                                action='typing'):
+        await asyncio.sleep(2)
+        await call.message.answer(
+            msg_text,
+            reply_markup=create_gst_inline_kb(questions))
+
+
+@start_router.message(Command('faq'))
+async def cmd_start_2(message: Message):
+    await message.answer('Сообщение с инлайн клавиатурой с вопросами',
+                         reply_markup=create_gst_inline_kb(questions))
+
+
 @start_router.callback_query(F.data == 'back_home')
 async def cmd_back_home(call: CallbackQuery):
-    await call.answer('Вы вернулись на главный экран!', show_alert=False)
-    await call.message.answer(
-        'Главный экран', reply_markup=main_kb(call.from_user.id)
-    )
+    async with ChatActionSender(bot=bot, chat_id=call.from_user.id,
+                                action='typing'):
+        await asyncio.sleep(2)
+        await call.answer('Вы вернулись на главный экран!', show_alert=False)
+        main_screen_message = await call.message.answer('Главный экран', reply_markup=main_kb(call.from_user.id))
+
+        # Удаляем клавиатуру
+        await call.message.edit_reply_markup(reply_markup=None)
+
+        # Удаляем сообщение "Главный экран" через некоторое время или по какому-то условию
+        await asyncio.sleep(5)  # Ждём, например  секунд
+        await main_screen_message.delete()  # Удаляем сообщение "Главный экран"
 
 
 @start_router.callback_query(F.data == 'get_person')
@@ -30,7 +81,11 @@ async def send_random_person(call: CallbackQuery):
         f"🏢 <b>Компания:</b> {user['company']}\n"
         f"💼 <b>Должность:</b> {user['job']}\n"
     )
-    await call.message.answer(formatted_message)
+    async with ChatActionSender(bot=bot, chat_id=call.from_user.id,
+                                action='typing'):
+        await asyncio.sleep(2)
+        await call.message.answer(formatted_message)
+        await call.message.edit_reply_markup(reply_markup=None)
 
 
 @start_router.message(F.text == 'Давай инлайн!')

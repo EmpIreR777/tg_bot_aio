@@ -1,6 +1,6 @@
 import asyncio
-from aiogram.types import BotCommand, BotCommandScopeDefault
 
+from aiogram.types import BotCommand, BotCommandScopeDefault
 from create_bot import bot, dp, scheduler
 from handlers.start import start_router
 # from work_time.time_func import send_time_msg
@@ -9,8 +9,8 @@ async def set_commands():
     commands = [  # Настройка командного меню через код слева от скрепки
         BotCommand(command='start', description='Старт'),
         BotCommand(command='start_2', description='Старт 2'),
-        BotCommand(command='start_3', description='Старт 3'),
-    ]
+        BotCommand(command='faq', description='Частые вопросы')
+        ]
     await bot.set_my_commands(commands, BotCommandScopeDefault())
 
 
