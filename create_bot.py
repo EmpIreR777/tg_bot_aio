@@ -1,3 +1,4 @@
+import os
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -21,7 +22,7 @@ questions = {
 }
 
 # from db_handler.db_class import PostgresHandler
-
+all_media_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'all_media')
 # pg_db = PostgresHandler(config('PG_LINK'))
 scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
 admins = [int(admin_id) for admin_id in config('ADMIN_ID').split(',')]

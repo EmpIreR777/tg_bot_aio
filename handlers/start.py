@@ -1,33 +1,132 @@
 import asyncio
+import os
 from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, CommandObject
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import (Message, CallbackQuery,
+                           FSInputFile, InputMediaVideo,
+                           InputMediaPhoto)
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram.fsm.context import FSMContext
 
 from keyboards.all_kb import create_rat, main_kb, create_spec_kb
-from keyboards.inline_kbs import ease_link_kb, get_inline_kb, create_gst_inline_kb
+from keyboards.inline_kbs import (ease_link_kb,
+                                 get_inline_kb,
+                                 create_gst_inline_kb)
 from utils.utils import get_random_person, get_msc_date
-from create_bot import questions, bot, admins
+from create_bot import questions, bot, admins, all_media_dir
 from filters.is_admin import IsAdmin
 
 
 start_router = Router()
 
 
-@start_router.message(Command('test_edit_msg'))
+@start_router.message(Command('send_media_group'))
 async def cmd_start(message: Message, state: FSMContext):
-    msg = await message.answer('<s>ПРИВЕТ!</s>')
-    print(msg.html_text)
+    photo_1 = InputMediaPhoto(type='photo',
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-05_09-32-15.jpg')),
+                              caption='Описание ко <b>ВСЕЙ</b> медиагруппе')
+    photo_2 = InputMediaPhoto(type='photo',
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-14_20-13-40.jpg')))
+    photo_3 = InputMediaPhoto(type='photo',
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-05_09-32-15.jpg')))
+    video_1 = InputMediaVideo(type='video',
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'IMG_4045.MP4')))
+    photo_4 = InputMediaPhoto(type='photo',
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-14_20-16-27.jpg')))
+    video_2 = InputMediaVideo(type='video',
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'IMG_3978.MP4')))
+
+    media = [photo_1, photo_2, photo_3, video_1, photo_4, video_2]
+    await message.answer_media_group(media=media)
 
 
-@start_router.message(Command('test_edit_msg'))
+@start_router.message(F.video_note)
 async def cmd_start(message: Message, state: FSMContext):
-    msg = await message.answer('Привет!')
+    print(message.video_note.file_id)
+
+
+@start_router.message(Command('send_voice'))
+async def cmd_start(message: Message, state: FSMContext):
+    async with ChatActionSender.record_voice(bot=bot, chat_id=message.from_user.id):
+        await asyncio.sleep(3)
+        await message.answer_voice(voice=FSInputFile(
+            path=os.path.join(all_media_dir, 'sample-12s.mp3')))
+
+
+@start_router.message(Command('send_video_note'))
+async def cmd_start(message: Message, state: FSMContext):
+    async with ChatActionSender.record_video_note(bot=bot, chat_id=message.from_user.id):
+        await asyncio.sleep(3)
+        await message.answer_video_note(
+            video_note='sample-10s.mp4')
+
+
+@start_router.message(Command('send_video'))
+async def cmd_start(message: Message, state: FSMContext):
+    video_file = FSInputFile(path=os.path.join(all_media_dir, 'sample-10s.mp4'))
+    msg_1 = await message.answer_video(video=video_file, caption='Моя <b>отформатированная подпись</b> к файлу')
     await asyncio.sleep(2)
-    old_text = msg.text
+    await msg_1.edit_caption(caption='Новое описание к видео 1')
+
+    await asyncio.sleep(2)
+    new_video_file = FSInputFile(path=os.path.join(
+        all_media_dir, 'sample-5s.mp4'))
+    await msg_1.edit_media(
+        media=InputMediaVideo(media=new_video_file, caption='Новое видео и у него новое описание.'),
+        reply_markup=ease_link_kb(),
+    )
+
+
+@start_router.message(Command('send_video'))
+async def cmd_start(message: Message, state: FSMContext):
+    video_file = FSInputFile(path=os.path.join(all_media_dir, 'sample-10s.mp4'))
+    msg = await message.answer_video(
+        video=video_file, reply_markup=main_kb(message.from_user.id), caption='Моя отформатированная подпись к файлу'
+    )
+    await asyncio.sleep(2)
+    await msg.answer_video(video=msg.video.file_id, caption='Новое описание к моему видео.', reply_markup=main_kb(message.from_user.id))
     await msg.delete()
-    await message.answer(old_text, reply_markup=main_kb(message.from_user.id))
+
+
+@start_router.message(Command('send_photo'))
+async def cmd_start(message: Message, state: FSMContext):
+    # photo_file = FSInputFile(path=os.path.join(
+    #     all_media_dir, 'i (2).webp'))
+    # photo_id = 'AgACAgIAAxkDAAIDHGdXC3uNRjhRprdUahNZ8THx5OleAAJ-6zEbdoC4Sj46Af_y5PsLAQADAgADeQADNgQ'
+    photo_url = 'https://avatars.mds.yandex.net/i?id=22a42b764502e262f9cc3af7bfa627bf_l-3563662-images-thumbs&n=13'
+    msg_id = await message.answer_photo(
+        photo=photo_url,
+        reply_markup=main_kb(message.from_user.id),
+        caption='Моя <u>отформатированная</u> подпись к <b>фото</b>',
+    )
+    print(msg_id.photo[-1].file_id)
+
+
+@start_router.message(Command('send_audio'))
+async def cmd_start(message: Message, state: FSMContext):
+    # audio_file = FSInputFile(path=os.path.join(all_media_dir, 'sample-12s.mp3'), filename='audio')
+    audio_id = 'CQACAgIAAxkDAAICxGdXAkv2KhExiwnm-BWD-W1AygTaAALuZgACCDO4SpN1gT2IInStNgQ'
+    msg_id = await message.answer_audio(
+        audio=audio_id,
+        reply_markup=main_kb(message.from_user.id),
+        caption='Моя <u>отформатированная</u> подпись к <b>файлу</b>',
+    )
+    print('!!!!!!!!!!!!!!', msg_id.message_id, msg_id.audio.file_id, '!!!!')
+
+
+# @start_router.message(Command('test_edit_msg'))
+# async def cmd_start(message: Message, state: FSMContext):
+#     msg = await message.answer('<s>ПРИВЕТ!</s>')
+#     print(msg.html_text)
+
+
+# @start_router.message(Command('test_edit_msg'))
+# async def cmd_start(message: Message, state: FSMContext):
+#     msg = await message.answer('Привет!')
+#     await asyncio.sleep(2)
+#     old_text = msg.text
+#     await msg.delete()
+#     await message.answer(old_text, reply_markup=main_kb(message.from_user.id))
 
 
 @start_router.message(Command('test_edit_msg'))
