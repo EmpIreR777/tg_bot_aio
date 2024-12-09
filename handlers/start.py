@@ -3,14 +3,78 @@ from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.chat_action import ChatActionSender
+from aiogram.fsm.context import FSMContext
 
 from keyboards.all_kb import create_rat, main_kb, create_spec_kb
 from keyboards.inline_kbs import ease_link_kb, get_inline_kb, create_gst_inline_kb
-from utils.utils import get_random_person
-from create_bot import questions, bot
+from utils.utils import get_random_person, get_msc_date
+from create_bot import questions, bot, admins
+from filters.is_admin import IsAdmin
 
 
 start_router = Router()
+
+
+@start_router.message(Command('test_edit_msg'))
+async def cmd_start(message: Message, state: FSMContext):
+    msg = await message.answer('<s>ПРИВЕТ!</s>')
+    print(msg.html_text)
+
+
+@start_router.message(Command('test_edit_msg'))
+async def cmd_start(message: Message, state: FSMContext):
+    msg = await message.answer('Привет!')
+    await asyncio.sleep(2)
+    old_text = msg.text
+    await msg.delete()
+    await message.answer(old_text, reply_markup=main_kb(message.from_user.id))
+
+
+@start_router.message(Command('test_edit_msg'))
+async def cmd_start(message: Message, state: FSMContext):
+    # Бот делает отправку сообщения с сохранением объекта msg
+    msg = await message.answer('Отправляю сообщение')
+    # Достаем ID сообщения
+    msg_id = msg.message_id
+    # Имитируем набор текста 2 секунды и отправляеВ коде оставлены комментарии. Единственное, на что нужно обратить внимание, — строка:
+    async with ChatActionSender(bot=bot, chat_id=message.from_user.id, action="typing"):
+        await asyncio.sleep(2)
+        await message.answer('Новое сообщение')
+    # Делаем паузу ещё на 2 секунды
+    await asyncio.sleep(2)
+    # Изменяем текст сообщения, ID которого мы сохранили
+    await bot.edit_message_text(text='<b>Отправляю сообщение!!!</b>', chat_id=message.from_user.id, message_id=msg_id)
+
+
+@start_router.message(F.text.lower().contains('охотник'))
+async def cmd_start(message: Message, state: FSMContext):
+    # отправка обычного сообщения
+    await message.answer('Я думаю, что ты тут про радугу рассказываешь')
+    # то же действие, но через объект бота
+    await bot.send_message(chat_id=message.from_user.id, text='Для меня это слишком просто')
+    # ответ через цитату
+    msg = await message.reply('Ну вот что за глупости!?')
+
+    # ответ через цитату, через объект bot
+    await bot.send_message(
+        chat_id=message.from_user.id, text='Хотя, это забавно...', reply_to_message_id=msg.message_id
+    )
+    await bot.forward_message(
+        chat_id=message.from_user.id, from_chat_id=message.from_user.id, message_id=msg.message_id
+    )
+    data_task = {
+        'user_id': message.from_user.id,
+        'full_name': message.from_user.full_name,
+        'username': message.from_user.username,
+        'message_id': message.message_id,
+        'date': get_msc_date(message.date),
+    }
+    print(data_task)
+
+
+@start_router.message(F.text.lower().contains('подписывайся'), IsAdmin(admins))
+async def process_find_word(message: Message):
+    await message.answer('О, админ, здарова! А тебе можно писать подписывайся.')
 
 
 @start_router.message(F.text.lower().contains('подписывайся'))
