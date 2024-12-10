@@ -3,7 +3,8 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
+# from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
 from decouple import config
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -21,8 +22,14 @@ questions = {
     10: {'qst': 'Какой океан самый большой?', 'answer': 'Тихий океан'},
 }
 
+
+storage = RedisStorage.from_url(config('REDIS_URL'))
+redis_url = config('REDIS_URL')
+dp = Dispatcher(storage=storage)
+
 # from db_handler.db_class import PostgresHandler
-all_media_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'all_media')
+all_media_dir = os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), 'all_media')
 # pg_db = PostgresHandler(config('PG_LINK'))
 scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
 admins = [int(admin_id) for admin_id in config('ADMIN_ID').split(',')]
@@ -31,4 +38,4 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=config('BOT_TOKEN'), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher(storage=MemoryStorage())
+# dp = Dispatcher(storage=MemoryStorage())

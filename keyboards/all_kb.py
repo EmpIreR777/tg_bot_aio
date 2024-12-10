@@ -5,6 +5,16 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from create_bot import admins, bot
 
 
+def gender_kb():
+    kb_list = [[KeyboardButton(text="👨‍🦱Мужчина")], [KeyboardButton(text="👩‍🦱Женщина")]]
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=kb_list, resize_keyboard=True,
+        one_time_keyboard=True,
+        input_field_placeholder="Выбери пол:"
+    )
+    return keyboard
+
+
 def create_rat():
     builder = ReplyKeyboardBuilder()
     for item in [str(i) for i in range(1, 11)]:

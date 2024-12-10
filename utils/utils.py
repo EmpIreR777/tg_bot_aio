@@ -1,4 +1,5 @@
 from faker import Faker
+import re
 import pytz
 
 
@@ -25,3 +26,12 @@ def get_msc_date(utc_time):
     # Переводим время в московский часовой пояс
     moscow_time = utc_time.astimezone(moscow_tz)
     return moscow_time
+
+
+def extract_number(text):
+    # Проверка что в сообщение есть возраст и виде цифр
+    match = re.search(r'\b(\d+)\b', text)
+    if match:
+        return int(match.group(1))
+    else:
+        return None

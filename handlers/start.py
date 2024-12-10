@@ -4,37 +4,186 @@ from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import (Message, CallbackQuery,
                            FSInputFile, InputMediaVideo,
-                           InputMediaPhoto)
+                           InputMediaPhoto,
+                           ReplyKeyboardRemove)
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
-from keyboards.all_kb import create_rat, main_kb, create_spec_kb
-from keyboards.inline_kbs import (ease_link_kb,
-                                 get_inline_kb,
-                                 create_gst_inline_kb)
-from utils.utils import get_random_person, get_msc_date
+from keyboards.all_kb import (create_rat, main_kb,
+                            create_spec_kb, gender_kb)
+from keyboards.inline_kbs import (
+    ease_link_kb, get_inline_kb, create_gst_inline_kb,
+    get_login_tg, check_data)
+from utils.utils import get_random_person, get_msc_date, extract_number
 from create_bot import questions, bot, admins, all_media_dir
 from filters.is_admin import IsAdmin
 
 
+class Form(StatesGroup):
+    gender = State()
+    age = State()
+    full_name = State()
+    user_login = State()
+    photo = State()
+    about = State()
+    check_state = State()
+
+
+questionnaire_router = Router()
+
+
+@questionnaire_router.message(Command('start_questionnaire'))
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await state.clear()
+    async with ChatActionSender.typing(bot=bot, chat_id=message.chat.id):
+        await asyncio.sleep(2)
+        await message.answer('Привет. Для начала выбери свой пол: ', reply_markup=gender_kb())
+    await state.set_state(Form.gender)
+
+
+@questionnaire_router.message((F.text.lower().contains('мужчина')) | (F.text.lower().contains('женщина')), Form.gender)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await state.update_data(
+        gender=message.text, user_id=message.from_user.id
+        )
+    async with ChatActionSender.typing(bot=bot, chat_id=message.chat.id):
+        await asyncio.sleep(2)
+        await message.answer('Супер! А теперь напиши сколько тебе польных лет:', reply_markup=ReplyKeyboardRemove())
+    await state.set_state(Form.age)
+
+
+@questionnaire_router.message(F.text, Form.gender)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    async with ChatActionSender.typing(bot=bot, chat_id=message.chat.id):
+        await asyncio.sleep(2)
+        await message.answer(
+            'Пожалуйста, выбери вариант из тех что в клавиатуре:',
+            reply_markup=gender_kb())
+        await state.set_state(Form.gender)
+
+
+@questionnaire_router.message(F.text, Form.age)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    check_age =  extract_number(message.text)
+    if not check_age or not (1 <= int(message.text) <= 100):
+        await message.reply("Пожалуйста, введите корректный возраст (число от 1 до 100).")
+        return
+    await state.update_data(age=check_age)
+    await message.answer('Теперь укажите своё полное имя:')
+    await state.set_state(Form.full_name)
+
+
+@questionnaire_router.message(F.text, Form.full_name)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await state.update_data(full_name=message.text)
+    text = 'Теперь укажите ваш логин, который будет использоваться в боте'
+    if message.from_user.username:
+        text += ' или нажмите на кнопку ниже и в этом случае вашим логином будет логин из вашего телеграмма:'
+        await message.answer(text, reply_markup=get_login_tg())
+    else:
+        text += ' : '
+        await message.answer(text)
+    await state.set_state(Form.user_login)
+
+
+# вариант когда мы берем логин из профиля телеграмм
+@questionnaire_router.callback_query(F.data, Form.user_login)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    await call.answer('Беру логин с телеграмм профиля')
+    await call.message.edit_reply_markup(reply_markup=None)
+    await state.update_data(user_login=call.from_user.username)
+    await call.message.answer('А теперь отправьте фото, которое будет использоваться в вашем профиле: ')
+    await state.set_state(Form.photo)
+
+
+# вариант когда мы берем логин из введенного пользователем
+@questionnaire_router.message(F.text, Form.user_login)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await state.update_data(user_login=message.from_user.username)
+    await message.answer('А теперь отправьте фото, которое будет использоваться в вашем профиле: ')
+    await state.set_state(Form.photo)
+
+
+@questionnaire_router.message(F.photo, Form.photo)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    photo_id = message.photo[-1].file_id
+    await state.update_data(photo=photo_id)
+    await message.answer('А теперь расскажите пару слов о себе[-1]: ')
+    await state.set_state(Form.about)
+
+
+@questionnaire_router.message(F.document.mime_type.startswith('image/'), Form.photo)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    photo_id = message.document.file_id
+    await state.update_data(photo=photo_id)
+    await message.answer('А теперь расскажите пару слов о себе image/: ')
+    await state.set_state(Form.about)
+
+
+@questionnaire_router.message(F.document, Form.photo)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await message.answer('Пожалуйста, отправьте фото!')
+    await state.set_state(Form.photo)
+
+
+@questionnaire_router.message(F.text, Form.about)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await state.update_data(about=message.text)
+
+    data = await state.get_data()
+
+    caption = (
+        f'Пожалуйста, проверьте все ли верно: \n\n'
+        f'<b>Полное имя</b>: {data.get("full_name")}\n'
+        f'<b>Пол</b>: {data.get("gender")}\n'
+        f'<b>Возраст</b>: {data.get("age")} лет\n'
+        f'<b>Логин в боте</b>: {data.get("user_login")}\n'
+        f'<b>О себе</b>: {data.get("about")}'
+    )
+
+    await message.answer_photo(photo=data.get('photo'), caption=caption, reply_markup=check_data())
+    await state.set_state(Form.check_state)
+
+
+@questionnaire_router.callback_query(F.data == 'correct', Form.check_state)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    await call.answer('Данные сохранены')
+    await call.message.edit_reply_markup(reply_markup=None)
+    await call.message.answer(
+        'Благодарю за регистрацию. Ваши данные успешно сохранены!')
+    await state.clear()
+
+
+@questionnaire_router.callback_query(F.data == 'incorrect', Form.check_state)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    await call.answer('Запускаем сценарий с начала')
+    await call.message.edit_reply_markup(reply_markup=None)
+    await call.message.answer('Привет. Для начала выбери свой пол:',
+                              reply_markup=gender_kb())
+    await state.set_state(Form.gender)
+
+
+""" Всё что ниже это без FSM."""
 start_router = Router()
 
 
 @start_router.message(Command('send_media_group'))
 async def cmd_start(message: Message, state: FSMContext):
     photo_1 = InputMediaPhoto(type='photo',
-                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-05_09-32-15.jpg')),
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'i (1).webp')),
                               caption='Описание ко <b>ВСЕЙ</b> медиагруппе')
     photo_2 = InputMediaPhoto(type='photo',
-                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-14_20-13-40.jpg')))
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'i (2).webp')))
     photo_3 = InputMediaPhoto(type='photo',
-                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-05_09-32-15.jpg')))
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'sample-birch-400x300.jpg')))
     video_1 = InputMediaVideo(type='video',
-                              media=FSInputFile(path=os.path.join(all_media_dir, 'IMG_4045.MP4')))
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'sample-10s.mp4')))
     photo_4 = InputMediaPhoto(type='photo',
-                              media=FSInputFile(path=os.path.join(all_media_dir, 'photo_2024-06-14_20-16-27.jpg')))
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'sample-blue-200x200.jpg')))
     video_2 = InputMediaVideo(type='video',
-                              media=FSInputFile(path=os.path.join(all_media_dir, 'IMG_3978.MP4')))
+                              media=FSInputFile(path=os.path.join(all_media_dir, 'sample-9s.mp3')))
 
     media = [photo_1, photo_2, photo_3, video_1, photo_4, video_2]
     await message.answer_media_group(media=media)

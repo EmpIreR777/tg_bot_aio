@@ -6,6 +6,22 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from create_bot import questions
 
 
+def get_login_tg():
+    kb_list = [
+        [InlineKeyboardButton(text='Использовать мой логин с ТГ', callback_data='in_login')]]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
+    return keyboard
+
+
+def check_data():
+    kb_list = [
+        [InlineKeyboardButton(text='✅Все верно', callback_data='correct')],
+        [InlineKeyboardButton(text='❌Заполнить сначала', callback_data='incorrect')],
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
+    return keyboard
+
+
 def create_gst_inline_kb(questions: dict) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for question_id, question_data in questions.items():
