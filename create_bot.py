@@ -8,6 +8,11 @@ from aiogram.fsm.storage.redis import RedisStorage
 from decouple import config
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from asyncpg_lite import DatabaseManager
+
+pg_manager = DatabaseManager(db_url=config('PG_URL'),
+                              deletion_password=config('ROOT_PASS'))
+
 
 questions = {
     1: {'qst': 'Столица Италии?', 'answer': 'Рим'},
