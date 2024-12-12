@@ -10,6 +10,7 @@ from aiogram.utils.chat_action import ChatActionSender
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
+from func_add_table_get_creat import get_user_data, insert_user
 from keyboards.all_kb import (create_rat, main_kb,
                             create_spec_kb, gender_kb)
 from keyboards.inline_kbs import (
@@ -147,12 +148,16 @@ async def start_questionnaire_process(message: Message, state: FSMContext):
     await state.set_state(Form.check_state)
 
 
+# сохраняем данные
 @questionnaire_router.callback_query(F.data == 'correct', Form.check_state)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     await call.answer('Данные сохранены')
+    user_data = await state.get_data()
+    await insert_user(user_data)
     await call.message.edit_reply_markup(reply_markup=None)
     await call.message.answer(
-        'Благодарю за регистрацию. Ваши данные успешно сохранены!')
+        'Благодарю за регистрацию. Ваши данные успешно сохранены!', reply_markup=main_kb(call.from_user.id)
+    )
     await state.clear()
 
 
@@ -167,6 +172,24 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
 
 """ Всё что ниже это без FSM."""
 start_router = Router()
+
+
+@start_router.message(F.text.contains('Профиль'))
+async def start_profile(message: Message, state: FSMContext):
+    async with ChatActionSender.typing(bot=bot, chat_id=message.chat.id):
+        user_info = await get_user_data(user_id=message.from_user.id)
+        profile_message = (
+            f"<b>👤 Профиль пользователя:</b>\n"
+            f"<b>🆔 ID:</b> {user_info['user_id']}\n"
+            f"<b>💼 Логин:</b> @{user_info['user_login']}\n"
+            f"<b>📛 Полное имя:</b> {user_info['full_name']}\n"
+            f"<b>🧑‍🦰 Пол:</b> {user_info['gender']}\n"
+            f"<b>🎂 Возраст:</b> {user_info['age']}\n"
+            f"<b>📅 Дата регистрации:</b> {user_info['date_reg']}\n"
+            f"<b>📝 О себе:</b> {user_info['about']}\n"
+        )
+        await message.answer_photo(photo=user_info.get('photo'),
+                                   caption=profile_message)
 
 
 @start_router.message(Command('send_media_group'))
@@ -409,18 +432,18 @@ async def get_inline_btn_link(message: Message):
 
 
 @start_router.message(CommandStart())
-async def cmd_start(message: Message, command: CommandObject):
-    command_args: str = command.args
-    if command_args:
+async def cmd_start(message: Message, state: FSMContext):
+    await state.clear()
+    async with ChatActionSender.typing(bot=bot, chat_id=message.chat.id):
+        user_info = await get_user_data(user_id=message.from_user.id)
+    if user_info:
         await message.answer(
-            f'Запуск сообщения по команде /start используя фильтр CommandStart() с меткой <b>{command_args}</b>',
+            'Привет. Я вижу, что ты зарегистрирован, а значит тебе можно ' 'посмотреть, как выглядит твой профиль.',
             reply_markup=main_kb(message.from_user.id),
         )
     else:
-        await message.answer(
-            f'Запуск сообщения по команде /start используя фильтр CommandStart() без метки',
-            reply_markup=main_kb(message.from_user.id),
-        )
+        await message.answer('Привет. Для начала выбери свой пол:', reply_markup=gender_kb())
+        await state.set_state(Form.gender)
 
 
 @start_router.message(CommandStart())
