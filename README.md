@@ -31,9 +31,9 @@
 
 Создайте файл .env в корневой директории проекта и укажите в нем необходимые переменные окружения:
 
-```BOT_TOKEN=ваш_токен_бота
+BOT_TOKEN=ваш_токен_бота
 DATABASE_URL=postgresql://user:password@localhost/dbname
-REDIS_URL=redis://localhost:6379/0```
+REDIS_URL=redis://localhost:6379/0
 
 
 Замените значения на ваши собственные.
