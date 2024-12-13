@@ -52,7 +52,7 @@ async def start_questionnaire_process(message: Message, state: FSMContext):
         )
     async with ChatActionSender.typing(bot=bot, chat_id=message.chat.id):
         await asyncio.sleep(2)
-        await message.answer('Супер! А теперь напиши сколько тебе польных лет:', reply_markup=ReplyKeyboardRemove())
+        await message.answer('Супер! А теперь напиши сколько тебе полных лет:', reply_markup=ReplyKeyboardRemove())
     await state.set_state(Form.age)
 
 
@@ -226,7 +226,8 @@ async def cmd_start(message: Message, state: FSMContext):
 
 @start_router.message(Command('send_voice'))
 async def cmd_start(message: Message, state: FSMContext):
-    async with ChatActionSender.record_voice(bot=bot, chat_id=message.from_user.id):
+    async with ChatActionSender.record_voice(
+        bot=bot, chat_id=message.from_user.id):
         await asyncio.sleep(3)
         await message.answer_voice(voice=FSInputFile(
             path=os.path.join(all_media_dir, 'sample-12s.mp3')))
@@ -290,7 +291,6 @@ async def cmd_start(message: Message, state: FSMContext):
         reply_markup=main_kb(message.from_user.id),
         caption='Моя <u>отформатированная</u> подпись к <b>файлу</b>',
     )
-    print('!!!!!!!!!!!!!!', msg_id.message_id, msg_id.audio.file_id, '!!!!')
 
 
 # @start_router.message(Command('test_edit_msg'))
