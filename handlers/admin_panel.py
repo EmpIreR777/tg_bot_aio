@@ -1,12 +1,32 @@
+import random
 from aiogram import F, Router
 from aiogram.types import Message
 from aiogram.utils.chat_action import ChatActionSender
+
 from create_bot import admins, bot
 from db_handler.db_funk import get_all_users
 from keyboards.all_kb import home_page_kb
+from db_handler.db_funk import get_all_users
 
 
 admin_router = Router()
+
+
+@admin_router.message(F.text == 'Рандомный пользователь!')
+async def get_random_user(message: Message):
+    all_users_data = await get_all_users()
+    user_info = random.choice(all_users_data)
+    profile_message = (
+            f"<b>👤 Профиль пользователя:</b>\n"
+            f"<b>🆔 ID:</b> {user_info['user_id']}\n"
+            f"<b>💼 Логин:</b> @{user_info['user_login']}\n"
+            f"<b>📛 Полное имя:</b> {user_info['full_name']}\n"
+            f"<b>🧑‍🦰 Пол:</b> {user_info['gender']}\n"
+            f"<b>🎂 Возраст:</b> {user_info['age']}\n"
+            f"<b>📅 Дата регистрации:</b> {user_info['date_reg']}\n"
+            f"<b>📝 О себе:</b> {user_info['about']}\n"
+        )
+    await message.answer_photo(photo=user_info.get('photo'), caption=profile_message)
 
 
 @admin_router.message((F.text.endswith('Админ панель')) & (F.from_user.id.in_(admins)))
