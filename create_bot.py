@@ -7,8 +7,8 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 from decouple import config
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
 from asyncpg_lite import DatabaseManager
+
 
 pg_manager = DatabaseManager(db_url=config('PG_URL'),
                               deletion_password=config('ROOT_PASS'))
@@ -32,6 +32,7 @@ storage = RedisStorage.from_url(config('REDIS_URL'))
 redis_url = config('REDIS_URL')
 dp = Dispatcher(storage=storage)
 
+# dp = Dispatcher(storage=MemoryStorage())
 # from db_handler.db_class import PostgresHandler
 all_media_dir = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), 'all_media')
@@ -43,4 +44,3 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=config('BOT_TOKEN'), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-# dp = Dispatcher(storage=MemoryStorage())

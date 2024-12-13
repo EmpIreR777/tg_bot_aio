@@ -1,5 +1,6 @@
 import asyncio
 import os
+from datetime import datetime
 from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import (Message, CallbackQuery,
@@ -9,9 +10,10 @@ from aiogram.types import (Message, CallbackQuery,
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from sqlalchemy import text
 
-from func_add_table_get_creat import get_user_data, insert_user
-from keyboards.all_kb import (create_rat, main_kb,
+from db_handler.db_funk import get_user_data, insert_user
+from keyboards.all_kb import (create_rat, home_page_kb, main_kb,
                             create_spec_kb, gender_kb)
 from keyboards.inline_kbs import (
     ease_link_kb, get_inline_kb, create_gst_inline_kb,
@@ -153,6 +155,7 @@ async def start_questionnaire_process(message: Message, state: FSMContext):
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     await call.answer('Данные сохранены')
     user_data = await state.get_data()
+    user_data['date_reg'] = datetime.now().replace(second=0, microsecond=0)
     await insert_user(user_data)
     await call.message.edit_reply_markup(reply_markup=None)
     await call.message.answer(
@@ -174,6 +177,7 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
 start_router = Router()
 
 
+@start_router.message(Command('profile'))
 @start_router.message(F.text.contains('Профиль'))
 async def start_profile(message: Message, state: FSMContext):
     async with ChatActionSender.typing(bot=bot, chat_id=message.chat.id):
@@ -187,9 +191,12 @@ async def start_profile(message: Message, state: FSMContext):
             f"<b>🎂 Возраст:</b> {user_info['age']}\n"
             f"<b>📅 Дата регистрации:</b> {user_info['date_reg']}\n"
             f"<b>📝 О себе:</b> {user_info['about']}\n"
+            f'👥 Количество приглашенных тобой пользователей: <b>{user_info.get("count_refer")}</b>\n\n'
+            f"<b>🚀 Вот твоя персональная ссылка на приглашение: </b>"
+            f'<code>https://t.me/new_aio_test_bot?start={message.from_user.id}</code>'
         )
-        await message.answer_photo(photo=user_info.get('photo'),
-                                   caption=profile_message)
+        await message.answer_photo(photo=user_info.get('photo'), caption=profile_message)
+        await message.answer(text='asdas', reply_markup=home_page_kb(message.from_user.id))
 
 
 @start_router.message(Command('send_media_group'))
