@@ -3,7 +3,7 @@ from aiogram.types import (InlineKeyboardMarkup,
                            WebAppInfo)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from create_bot import questions
+from utils.dict import questions
 
 
 def get_login_tg():

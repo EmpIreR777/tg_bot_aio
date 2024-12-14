@@ -19,7 +19,8 @@ from keyboards.inline_kbs import (
     ease_link_kb, get_inline_kb, create_gst_inline_kb,
     get_login_tg, check_data)
 from utils.utils import get_random_person, get_msc_date, extract_number
-from create_bot import questions, bot, admins, all_media_dir
+from utils.dict import questions
+from create_bot import bot, admins, all_media_dir
 from filters.is_admin import IsAdmin
 
 
