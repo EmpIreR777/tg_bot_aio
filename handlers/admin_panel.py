@@ -39,7 +39,7 @@ async def get_profile(message: Message):
         admin_text = f'👥 В базе данных <b>{len(all_users_data)}</b> человек. Вот короткая информация по каждому:\n\n'
 
         for user in all_users_data:
-            admin_text += f'👤 Телеграм ID: .get("user_id")}\n' f'📝 Полное имя: {user.get("full_name")}\n'
+            admin_text += f'👤 Телеграм ID: .get("user_id")\n' f'📝 Полное имя: {user.get("full_name")}\n'
 
             if user.get("user_login") is not None:
                 admin_text += f'🔑 Логин: {user.get("user_login")}\n'
