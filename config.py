@@ -6,14 +6,13 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
     ADMIN_ID: str
 
-    DB_USER: str
-    DB_PASSWORD: str
-    DB_HOST: str
-    DB_PORT: str
-    DB_NAME: str
-    DB_ROOT_PASSWORD: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: str
+    POSTGRES_DB: str
+    POSTGRES_ROOT_PASSWORD: str
 
-    # REDIS_USER: str
     REDIS_PASSWORD: str
     REDIS_HOST: str
     REDIS_PORT: str
@@ -29,11 +28,13 @@ class Settings(BaseSettings):
         return self.ADMIN_ID
 
     def get_db_root_password(self):
-        return self.DB_ROOT_PASSWORD
+        return self.POSTGRES_ROOT_PASSWORD
 
     def get_db_url(self):
-        return (f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@'
-                f'{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}')
+        return (
+            f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@'
+            f'{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}'
+        )
     # PG_URL=postgresql://postgres_user_aio:postgres_password_aio@localhost:5430/postgres_db_aio
 
     def get_redis_url(self):

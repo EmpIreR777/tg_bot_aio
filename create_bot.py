@@ -14,7 +14,6 @@ from config import setting
 pg_manager = DatabaseManager(db_url=setting.get_db_url(),
                               deletion_password=setting.get_db_root_password())
 
-# redis_url = config('REDIS_URL')
 storage = RedisStorage.from_url(setting.get_redis_url())
 dp = Dispatcher(storage=storage)
 

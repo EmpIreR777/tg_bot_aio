@@ -1,16 +1,11 @@
 services:
   postgres:
-    image: postgres:latest
-    container_name: postgres_aio
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-      - PGDATA=/var/lib/postgresql/data/pgdata
+    image: postgres:13.10
+    env_file: .env
     ports:
       - "5430:5432"
     volumes:
-      - ./pgdata:/var/lib/postgresql/data/pgdata
+      - pg_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -28,54 +23,32 @@ services:
                -c wal_buffers=16MB
                -c default_statistics_target=100
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres_user_aio -d postgres_db_aio" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres_db_aio" ]
       interval: 30s
       timeout: 10s
       retries: 5
     restart: unless-stopped
-    tty: true
-    stdin_open: true
 
   redis:
     image: redis:latest
-    container_name: redis_aio
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_USER=${REDIS_USER}
-      - REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD}
     volumes:
       - redis_data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
-      - "6380:6379"
-    networks:
-      - app_network
+      - "6370:6379"
     restart: unless-stopped
-    tty: true
-    stdin_open: true
 
-  # bot:
-  #   build: ./
-  #   container_name: aio_bot
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #   environment:
-  #     - DATABASE_URL=postgres://postgres_user_aio:postgres_password_aio@postgres_aio:5430/postgres_db_aio
-  #     - REDIS_URL=redis://:your_secure_password@redis:6379/0
-  #   restart: unless-stopped
-  #   networks:
-  #     - app_network
+  bot:
+    build: ./
+    container_name: aio_bot
+    depends_on:
+      - postgres
+      - redis
+    env_file: .env
+    restart: unless-stopped
+
 
 volumes:
-  pgdata:
-    driver: local
+  pg_data:
   redis_data:
-    driver: local
-
-networks:
-  app_network:
-    driver: bridge
