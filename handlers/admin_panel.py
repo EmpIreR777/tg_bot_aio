@@ -18,18 +18,19 @@ async def get_random_user(message: Message):
     if all_users_data:
         user_info = random.choice(all_users_data)
         profile_message = (
-                f"<b>👤 Профиль пользователя:</b>\n"
-                f"<b>🆔 ID:</b> {user_info['user_id']}\n"
-                f"<b>💼 Логин:</b> @{user_info['user_login']}\n"
-                f"<b>📛 Полное имя:</b> {user_info['full_name']}\n"
-                f"<b>🧑‍🦰 Пол:</b> {user_info['gender']}\n"
-                f"<b>🎂 Возраст:</b> {user_info['age']}\n"
-                f"<b>📅 Дата регистрации:</b> {user_info['date_reg']}\n"
-                f"<b>📝 О себе:</b> {user_info['about']}\n"
-            )
+            f"<b>👤 Профиль пользователя:</b>\n"
+            f"<b>🆔 ID:</b> {user_info['user_id']}\n"
+            f"<b>💼 Логин:</b> @{user_info['user_login']}\n"
+            f"<b>📛 Полное имя:</b> {user_info['full_name']}\n"
+            f"<b>🧑‍🦰 Пол:</b> {user_info['gender']}\n"
+            f"<b>🎂 Возраст:</b> {user_info['age']}\n"
+            f"<b>📅 Дата регистрации:</b> {user_info['date_reg']}\n"
+            f"<b>📝 О себе:</b> {user_info['about']}\n"
+        )
         await message.answer_photo(photo=user_info.get('photo'), caption=profile_message)
     else:
         await message.answer('Пользователей нет!')
+
 
 @admin_router.message((F.text.endswith('Админ панель')) & (F.from_user.id.in_(admins)))
 async def get_profile(message: Message):
